@@ -1,0 +1,66 @@
+name: Build Legion KVM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Standalone Executable
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      # 1. Check out your AscendXP-RPM repository (initializes .git and keeps your workflow file safe)
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Download upstream source into a temporary build folder outside the repo
+      - name: Download Upstream Source
+        run: |
+          mkdir -p /tmp/legion-src
+          wget -q https://github.com/brcly/legion-kvm/archive/refs/heads/main.zip -O /tmp/main.zip
+          unzip -q /tmp/main.zip -d /tmp/legion-src
+          echo "BUILD_DIR=/tmp/legion-src/legion-kvm-main" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Download GE-Proton
+        run: |
+          mkdir -p $HOME/proton/GE-Proton11-11
+          wget -q https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton11-11/GE-Proton11-11-x86_64.tar.gz
+          tar -xzf GE-Proton11-11-x86_64.tar.gz -C $HOME/proton/GE-Proton11-11 --strip-components=1
+          echo "PROTON_PATH=$HOME/proton/GE-Proton11-11" >> $GITHUB_ENV
+
+      - name: Compile Legion Executable
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          python3 tools/build.py --proton ${{ env.PROTON_PATH }} --jobs $(nproc)
+
+      # 3. Copy the entire build/dist bundle (legion, runtime.json, and all bundle assets) into legion-kvm/
+      - name: Commit and Push Artifacts to legion-kvm/
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase
+          mkdir -p legion-kvm
+          cp -r ${{ env.BUILD_DIR }}/build/dist/* legion-kvm/
+
+          git add legion-kvm/
+          git status
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Compiled Legion"
+            git push origin main
+          fi
