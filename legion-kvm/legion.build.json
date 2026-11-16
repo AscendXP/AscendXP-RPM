@@ -1,6 +1,6 @@
 {
   "binary": "/build/dist/legion",
-  "bytes": 98420612,
-  "sha256": "3ce5c6b54cd5c84a433c8a221f33a6a6e6e4376385eaacfad29c7af20df26a95",
+  "bytes": 98420915,
+  "sha256": "d2ac42ef13bab0046b17a2a2ee45848410c3102b94081f98f675cb291f4e615b",
   "format": "ELF + zstd runtime records + versioned SHA-256 footer"
 }
