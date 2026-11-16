@@ -12,17 +12,15 @@ jobs:
       contents: write
 
     steps:
-      # 1. Check out your AscendXP-RPM repository (initializes .git and keeps your workflow file safe)
+      # 1. Check out your repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Download upstream source into a temporary build folder outside the repo
-      - name: Download Upstream Source
+      # 2. Clone upstream source directly so .git history is preserved for the build script
+      - name: Download Upstream Source via Git
         run: |
-          mkdir -p /tmp/legion-src
-          wget -q https://github.com/brcly/legion-kvm/archive/refs/heads/main.zip -O /tmp/main.zip
-          unzip -q /tmp/main.zip -d /tmp/legion-src
-          echo "BUILD_DIR=/tmp/legion-src/legion-kvm-main" >> $GITHUB_ENV
+          git clone https://github.com/brcly/legion-kvm.git /tmp/legion-src
+          echo "BUILD_DIR=/tmp/legion-src" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
